@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>بحث برقم الهاتف</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>بحث برقم الهاتف</h1>
+    <input type="file" id="fileInput" accept=".xlsx, .xls">
+    <button onclick="uploadFile()">رفع الملف</button>
+    <button onclick="readFile()">قراءة الملف</button>
+    <br><br>
+    <input type="text" id="phoneInput" placeholder="أدخل رقم الهاتف">
+    <button onclick="searchData()">بحث</button>
+    <br><br>
+    <table id="resultTable" border="1">
+        <thead>
+            <tr>
+                <!-- يتم إضافة رؤوس الأعمدة هنا ديناميكيًا -->
+            </tr>
+        </thead>
+        <tbody>
+            <!-- يتم إضافة الصفوف هنا ديناميكيًا -->
+        </tbody>
+    </table>
+
+    <script>
+        let excelData = [];
+
+        window.onload = function () {
+            const storedExcelData = localStorage.getItem('excelData');
+            if (storedExcelData) {
+                excelData = JSON.parse(storedExcelData);
+                alert('تم استعادة الملف المرفوع');
+            }
+        }
+
+        window.onbeforeunload = function () {
+            if (excelData.length > 0) {
+                localStorage.setItem('excelData', JSON.stringify(excelData));
+            }
+        }
+
+        function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function (event) {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                excelData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+                console.log('تم رفع الملف بنجاح!', excelData);
+                alert('تم رفع الملف بنجاح!');
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        function readFile() {
+            if (excelData.length === 0) {
+                alert('يرجى رفع ملف Excel أولاً');
+                return;
+            }
+
+            alert('تم قراءة الملف مسبقًا');
+        }
+
+        function searchData() {
+            const phoneInput = document.getElementById('phoneInput').value;
+            const resultTable = document.getElementById('resultTable');
+            const tbody = resultTable.querySelector('tbody');
+            tbody.innerHTML = '';
+
+            if (excelData.length === 0) {
+                alert('يرجى رفع وقراءة ملف Excel أولاً');
+                return;
+            }
+
+            const header = excelData[0];
+            resultTable.querySelector('thead tr').innerHTML = '';
+            header.forEach((cell) => {
+                const th = document.createElement('th');
+                th.textContent = cell;
+                resultTable.querySelector('thead tr').appendChild(th);
+            });
+
+            excelData.slice(1).forEach((row) => {
+                if (row.some(cell => cell.toString().includes(phoneInput))) {
+                    const tr = document.createElement('tr');
+                    row.forEach((cell) => {
+                        const td = document.createElement('td');
+                        td.textContent = cell;
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
